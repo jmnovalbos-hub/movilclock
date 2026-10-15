@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HUD Cyberpunk Clock - StandBy Mode</title>
+    <!-- Tailwind CSS for utility styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts for Futuristic Tech Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS Variables for Dynamic Color Themes */
+        :root {
+            --primary: #00f3ff;
+            --primary-glow: rgba(0, 243, 255, 0.4);
+            --primary-dim: rgba(0, 243, 255, 0.15);
+            --bg-color: #000000;
+        }
+
+        /* Color Theme Classes */
+        .theme-cyan {
+            --primary: #00f3ff;
+            --primary-glow: rgba(0, 243, 255, 0.4);
+            --primary-dim: rgba(0, 243, 255, 0.15);
+        }
+        .theme-purple {
+            --primary: #d900ff;
+            --primary-glow: rgba(217, 0, 255, 0.4);
+            --primary-dim: rgba(217, 0, 255, 0.15);
+        }
+        .theme-green {
+            --primary: #00ff66;
+            --primary-glow: rgba(0, 255, 102, 0.4);
+            --primary-dim: rgba(0, 255, 102, 0.15);
+        }
+        .theme-amber {
+            --primary: #ffb700;
+            --primary-glow: rgba(255, 183, 0, 0.4);
+            --primary-dim: rgba(255, 183, 0, 0.15);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .mono-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Neon Glow Effects */
+        .text-glow {
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow);
+        }
+        .border-glow {
+            box-shadow: 0 0 15px var(--primary-dim), inset 0 0 15px var(--primary-dim);
+        }
+
+        /* CRT Grid Overlay Effect */
+        .grid-overlay {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, var(--primary-dim) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--primary-dim) 1px, transparent 1px);
+            opacity: 0.25;
+        }
+
+        /* Scanline Overlay */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.4) 50%,
+                rgba(0, 0, 0, 0.4)
+            );
+            background-size: 100% 4px;
+        }
+
+        /* Canvas HUD Animation Positioning */
+        #hudCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            accent-color: var(--primary);
+        }
+
+        /* Smooth Hide for Controls */
+        .controls-fade {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .controls-hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        /* Burn-in protection animation container */
+        #burnInShiftContainer {
+            transition: transform 3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative theme-cyan">
+
+    <!-- Dimmer Screen Filter -->
+    <div id="dimmerOverlay" class="absolute inset-0 bg-black pointer-events-none z-30" style="opacity: 0;"></div>
+
+    <!-- HUD Grid Background -->
+    <div class="absolute inset-0 grid-overlay z-0"></div>
+    <div class="absolute inset-0 scanlines z-0 pointer-events-none"></div>
+
+    <!-- Interactive HUD Canvas Layer -->
+    <canvas id="hudCanvas" class="z-0"></canvas>
+
+    <!-- Main Container with Burn-in Shift offset -->
+    <div id="burnInShiftContainer" class="relative z-10 flex flex-col items-center justify-center w-full h-full p-4 pointer-events-none">
+        
+        <!-- Top Status Bar -->
+        <div class="absolute top-4 left-6 right-6 flex justify-between items-center text-xs md:text-sm mono-font tracking-widest opacity-80 pointer-events-auto">
+            <!-- System / Status Info -->
+            <div class="flex items-center space-x-3">
+                <span class="inline-block w-2 h-2 rounded-full bg-current animate-pulse"></span>
+                <span>SYS.LOC: <span id="locationText">ONLINE</span></span>
+                <span class="hidden sm:inline">|</span>
+                <span class="hidden sm:inline">STANDBY_MODE</span>
+            </div>
+
+            <!-- Battery Level Indicator -->
+            <div id="batteryContainer" class="flex items-center space-x-2 border border-current px-3 py-1 rounded-full border-glow">
+                <i data-lucide="battery-charging" id="batteryIcon" class="w-4 h-4"></i>
+                <span id="batteryLevel" class="font-bold">--%</span>
+            </div>
+        </div>
+
+        <!-- Main Digital Clock Display -->
+        <div class="flex flex-col items-center justify-center my-auto text-center pointer-events-auto">
+            <!-- Time Display -->
+            <div class="flex items-baseline justify-center tracking-tighter">
+                <!-- Hours & Minutes -->
+                <span id="clockMain" class="text-6xl sm:text-8xl md:text-9xl font-black text-glow tracking-wider">
+                    00:00
+                </span>
+                <!-- Seconds & AM/PM -->
+                <div class="flex flex-col items-start ml-2 sm:ml-4 text-left">
+                    <span id="clockSeconds" class="text-2xl sm:text-4xl md:text-5xl font-bold mono-font opacity-90 text-glow">
+                        :00
+                    </span>
+                    <span id="clockAmpm" class="text-xs sm:text-sm md:text-base font-semibold tracking-widest opacity-75 mt-1">
+                        24H
+                    </span>
+                </div>
+            </div>
+
+            <!-- Date Display -->
+            <div id="dateDisplay" class="mt-4 md:mt-6 text-sm sm:text-lg md:text-2xl mono-font tracking-widest opacity-90 text-glow uppercase border-t border-b border-current py-1 px-6">
+                LUNES, 01 ENE 2026
+            </div>
+        </div>
+
+        <!-- Bottom Cyber Status Details -->
+        <div class="absolute bottom-6 left-6 right-6 hidden sm:flex justify-between items-center text-xs mono-font opacity-60">
+            <div>WAKE_LOCK: <span id="wakeLockStatus" class="font-bold">INACTIVO</span></div>
+            <div>BURN_PROTECT: <span id="burnInStatus" class="font-bold">ACTIVO</span></div>
+        </div>
+    </div>
+
+    <!-- Toggle Controls Button (Visible when controls hidden) -->
+    <button id="showControlsBtn" class="absolute bottom-4 right-4 z-40 p-3 rounded-full bg-black/60 border border-current text-current opacity-0 transition-opacity duration-300 pointer-events-auto backdrop-blur-md">
+        <i data-lucide="settings" class="w-6 h-6"></i>
+    </button>
+
+    <!-- Floating Control Panel HUD -->
+    <div id="controlPanel" class="controls-fade absolute bottom-4 sm:bottom-6 z-40 bg-black/80 border border-current/40 rounded-2xl p-4 md:p-5 backdrop-blur-md max-w-lg w-[92%] flex flex-col gap-4 text-xs md:text-sm pointer-events-auto shadow-2xl">
+        
+        <div class="flex items-center justify-between border-b border-current/20 pb-2">
+            <div class="flex items-center space-x-2 font-bold tracking-wider">
+                <i data-lucide="sliders" class="w-4 h-4"></i>
+                <span>CONTROLES HUD</span>
+            </div>
+            <button id="hidePanelBtn" class="opacity-70 hover:opacity-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Control Grid -->
+        <div class="grid grid-cols-2 gap-3 sm:gap-4">
+            
+            <!-- Fullscreen Button -->
+            <button id="toggleFullscreen" class="flex items-center justify-center space-x-2 p-2.5 border border-current/40 rounded-xl hover:bg-white/10 active:scale-95 transition-all">
+                <i data-lucide="maximize" class="w-4 h-4"></i>
+                <span class="font-semibold">PANTALLA COMPLETA</span>
+            </button>
+
+            <!-- Screen Wake Lock Toggle -->
+            <button id="toggleWakeLock" class="flex items-center justify-center space-x-2 p-2.5 border border-current/40 rounded-xl hover:bg-white/10 active:scale-95 transition-all">
+                <i data-lucide="sun" class="w-4 h-4"></i>
+                <span id="wakeLockBtnText" class="font-semibold">MANTENER ACTIVA</span>
+            </button>
+
+        </div>
+
+        <!-- Color Themes Selector -->
+        <div class="flex flex-col space-y-2">
+            <label class="text-xs opacity-70 mono-font">PALETA DE COLOR NEÓN:</label>
+            <div class="grid grid-cols-4 gap-2">
+                <button data-theme="cyan" class="theme-btn p-2 rounded-lg border border-cyan-400 bg-cyan-950/40 text-cyan-400 text-xs font-bold flex items-center justify-center">
+                    CYAN
+                </button>
+                <button data-theme="purple" class="theme-btn p-2 rounded-lg border border-fuchsia-500 bg-fuchsia-950/40 text-fuchsia-400 text-xs font-bold flex items-center justify-center">
+                    PURPLE
+                </button>
+                <button data-theme="green" class="theme-btn p-2 rounded-lg border border-emerald-400 bg-emerald-950/40 text-emerald-400 text-xs font-bold flex items-center justify-center">
+                    MATRIX
+                </button>
+                <button data-theme="amber" class="theme-btn p-2 rounded-lg border border-amber-400 bg-amber-950/40 text-amber-400 text-xs font-bold flex items-center justify-center">
+                    AMBER
+                </button>
+            </div>
+        </div>
+
+        <!-- Brightness Dimmer Control -->
+        <div class="flex flex-col space-y-1">
+            <div class="flex justify-between opacity-70 mono-font text-xs">
+                <span>ATENUADOR DE BRILLO:</span>
+                <span id="dimmerVal">0%</span>
+            </div>
+            <input type="range" id="dimmerSlider" min="0" max="90" value="0" class="w-full h-1.5 bg-current/20 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Auto-Hide Notice -->
+        <div class="text-center text-[10px] opacity-50 mono-font tracking-tight">
+            Los controles se ocultarán tras 5 segundos de inactividad. Toca la pantalla para mostrarlos.
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        // --- State Management ---
+        let wakeLock = null;
+        let controlsTimeout = null;
+        let burnInShiftIndex = 0;
+        let primaryColorHex = '#00f3ff';
+
+        // Custom Themes Hex Values for Canvas Rendering
+        const themeColors = {
+            cyan: '#00f3ff',
+            purple: '#d900ff',
+            green: '#00ff66',
+            amber: '#ffb700'
+        };
+
+        // DOM Elements
+        const clockMain = document.getElementById('clockMain');
+        const clockSeconds = document.getElementById('clockSeconds');
+        const clockAmpm = document.getElementById('clockAmpm');
+        const dateDisplay = document.getElementById('dateDisplay');
+        const batteryLevel = document.getElementById('batteryLevel');
+        const batteryIcon = document.getElementById('batteryIcon');
+        const wakeLockStatus = document.getElementById('wakeLockStatus');
+        const wakeLockBtnText = document.getElementById('wakeLockBtnText');
+        const controlPanel = document.getElementById('controlPanel');
+        const showControlsBtn = document.getElementById('showControlsBtn');
+        const hidePanelBtn = document.getElementById('hidePanelBtn');
+        const toggleFullscreen = document.getElementById('toggleFullscreen');
+        const toggleWakeLock = document.getElementById('toggleWakeLock');
+        const dimmerSlider = document.getElementById('dimmerSlider');
+        const dimmerOverlay = document.getElementById('dimmerOverlay');
+        const dimmerVal = document.getElementById('dimmerVal');
+        const burnInContainer = document.getElementById('burnInShiftContainer');
+        const canvas = document.getElementById('hudCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- Initialize Icons ---
+        lucide.createIcons();
+
+        // --- Clock & Date Updater ---
+        function updateClock() {
+            const now = new Date();
+            
+            // Format Hours and Minutes
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            clockMain.textContent = `${hours}:${minutes}`;
+            clockSeconds.textContent = `:${seconds}`;
+
+            // Format Spanish Date
+            const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+            const dateString = now.toLocaleDateString('es-ES', options).toUpperCase();
+            dateDisplay.textContent = dateString;
+
+            requestAnimationFrame(updateClock);
+        }
+
+        // --- Battery Status (API Navigator Battery) ---
+        async function initBattery() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    
+                    function updateBatteryInfo() {
+                        const level = Math.round(battery.level * 100);
+                        batteryLevel.textContent = `${level}%`;
+                    }
+
+                    updateBatteryInfo();
+                    battery.addEventListener('levelchange', updateBatteryInfo);
+                    battery.addEventListener('chargingchange', updateBatteryInfo);
+                } catch (e) {
+                    batteryLevel.textContent = "100%";
+                }
+            } else {
+                batteryLevel.textContent = "100%";
+            }
+        }
+
+        // --- Screen Wake Lock API (With Permissions / iFrame Policy Fallback) ---
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLockStatus.textContent = 'ACTIVO';
+                    wakeLockStatus.classList.add('text-emerald-400');
+                    wakeLockBtnText.textContent = 'PANTALLA BLOQUEADA';
+                    
+                    wakeLock.addEventListener('release', () => {
+                        wakeLockStatus.textContent = 'INACTIVO';
+                        wakeLockStatus.classList.remove('text-emerald-400');
+                        wakeLockBtnText.textContent = 'MANTENER ACTIVA';
+                        wakeLock = null;
+                    });
+                } else {
+                    wakeLockStatus.textContent = 'NO SOPORTADO';
+                    wakeLockBtnText.textContent = 'USAR OPCIÓN ANDROID';
+                }
+            } catch (err) {
+                // Catch Permissions Policy errors gracefully when embedded in sandboxed iFrames
+                console.warn(`Wake Lock standard API request prevented by browser context: ${err.message}`);
+                wakeLockStatus.textContent = 'RESTRINGIDO';
+                wakeLockBtnText.textContent = 'MODO CARGA ANDROID';
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        }
+
+        toggleWakeLock.addEventListener('click', () => {
+            if (wakeLock) {
+                releaseWakeLock();
+            } else {
+                requestWakeLock();
+            }
+        });
+
+        // Re-apply Wake Lock on visibility change (when returning to tab)
+        document.addEventListener('visibilitychange', () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+
+        // --- Fullscreen Toggle ---
+        toggleFullscreen.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch((e) => {
+                    console.log(`Error entering fullscreen: ${e.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        // --- Color Theme Selector ---
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const theme = e.currentTarget.dataset.theme;
+                document.body.className = `h-screen w-screen flex flex-col items-center justify-center relative theme-${theme}`;
+                primaryColorHex = themeColors[theme];
+            });
+        });
+
+        // --- Dimmer Slider Control ---
+        dimmerSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            dimmerOverlay.style.opacity = val / 100;
+            dimmerVal.textContent = `${val}%`;
+        });
+
+        // --- Controls Auto-Hide Behavior ---
+        function resetControlsTimer() {
+            controlPanel.classList.remove('controls-hidden');
+            showControlsBtn.style.opacity = '0';
+            showControlsBtn.style.pointerEvents = 'none';
+
+            clearTimeout(controlsTimeout);
+            controlsTimeout = setTimeout(() => {
+                controlPanel.classList.add('controls-hidden');
+                showControlsBtn.style.opacity = '1';
+                showControlsBtn.style.pointerEvents = 'auto';
+            }, 5000);
+        }
+
+        // Interaction Listeners to Reveal Controls
+        document.addEventListener('mousemove', resetControlsTimer);
+        document.addEventListener('touchstart', resetControlsTimer);
+        hidePanelBtn.addEventListener('click', () => {
+            controlPanel.classList.add('controls-hidden');
+            showControlsBtn.style.opacity = '1';
+            showControlsBtn.style.pointerEvents = 'auto';
+        });
+        showControlsBtn.addEventListener('click', resetControlsTimer);
+
+        // --- OLED Burn-in Protection ---
+        // Moves main display around by a small pixel radius every 2 minutes
+        function applyBurnInProtection() {
+            const offsets = [
+                { x: 0, y: 0 },
+                { x: 10, y: -8 },
+                { x: -12, y: 10 },
+                { x: 8, y: 12 },
+                { x: -10, y: -10 }
+            ];
+            
+            burnInShiftIndex = (burnInShiftIndex + 1) % offsets.length;
+            const shift = offsets[burnInShiftIndex];
+            burnInContainer.style.transform = `translate(${shift.x}px, ${shift.y}px)`;
+        }
+
+        // Shift position every 2 minutes
+        setInterval(applyBurnInProtection, 120000);
+
+        // --- Canvas HUD Concentric Rings Render Engine ---
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let rotationAngle = 0;
+
+        function drawHUD() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const minDim = Math.min(canvas.width, canvas.height);
+            const radius = minDim * 0.38;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            // Outer Rotating HUD Compass Ring
+            ctx.save();
+            ctx.rotate(rotationAngle);
+            ctx.strokeStyle = primaryColorHex;
+            ctx.lineWidth = 1.5;
+            ctx.globalAlpha = 0.25;
+
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Ticks on Compass Ring
+            const ticks = 36;
+            for (let i = 0; i < ticks; i++) {
+                const angle = (i * Math.PI * 2) / ticks;
+                const innerR = radius - (i % 3 === 0 ? 12 : 6);
+                const x1 = Math.cos(angle) * radius;
+                const y1 = Math.sin(angle) * radius;
+                const x2 = Math.cos(angle) * innerR;
+                const y2 = Math.sin(angle) * innerR;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // Inner Counter-Rotating Arc Segments
+            ctx.save();
+            ctx.rotate(-rotationAngle * 1.5);
+            ctx.strokeStyle = primaryColorHex;
+            ctx.lineWidth = 3;
+            ctx.globalAlpha = 0.4;
+
+            // Segment 1
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.82, 0, Math.PI * 0.4);
+            ctx.stroke();
+
+            // Segment 2
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.82, Math.PI, Math.PI * 1.4);
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Crosshair Corner Guides
+            ctx.strokeStyle = primaryColorHex;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.2;
+            const crossSize = radius * 0.95;
+
+            ctx.beginPath();
+            ctx.moveTo(-crossSize, 0);
+            ctx.lineTo(-crossSize + 20, 0);
+            ctx.moveTo(crossSize, 0);
+            ctx.lineTo(crossSize - 20, 0);
+            ctx.moveTo(0, -crossSize);
+            ctx.lineTo(0, -crossSize + 20);
+            ctx.moveTo(0, crossSize);
+            ctx.lineTo(0, crossSize - 20);
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Incremental Rotation speed
+            rotationAngle += 0.002;
+
+            requestAnimationFrame(drawHUD);
+        }
+
+        // --- Start Application ---
+        window.onload = () => {
+            updateClock();
+            initBattery();
+            requestWakeLock();
+            drawHUD();
+            resetControlsTimer();
+        };
+    </script>
+</body>
+</html>
