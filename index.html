@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dojo Tokio School · Formación interna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Albert+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#000A5E; --teal:#30D9C4; --pink:#FF4F9A;
+  --bg:#F3F5FB; --surface:#FFFFFF; --ink:#0C1240; --muted:#4F5679; --line:#D9DDEC;
+  --accent:#000A5E; --accent-ink:#FFFFFF; --soft:#E6F9F6; --soft-ink:#075E54;
+  --focus:#FF4F9A;
+  --display:"Unbounded", "Arial Black", system-ui, sans-serif;
+  --body:"Albert Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#060A2E; --surface:#0E1446; --ink:#EEF0FF; --muted:#A9AFD6; --line:#252C66;
+    --accent:#30D9C4; --accent-ink:#04103A; --soft:#10304A; --soft-ink:#8FF0E3; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#060A2E; --surface:#0E1446; --ink:#EEF0FF; --muted:#A9AFD6; --line:#252C66;
+  --accent:#30D9C4; --accent-ink:#04103A; --soft:#10304A; --soft-ink:#8FF0E3; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1.0625rem;line-height:1.6}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+button{font:inherit;color:inherit}
+img{max-width:100%}
+
+.app{display:grid;grid-template-columns:19rem 1fr;min-height:100vh}
+.side{background:var(--navy);color:#fff;padding:2rem 1.5rem;position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column;gap:1.75rem}
+.brand{font-family:var(--display);font-weight:700;font-size:1.15rem;letter-spacing:-.01em;line-height:1.2}
+.brand small{display:block;font-family:var(--body);font-weight:500;font-size:.85rem;color:#B9BEF0;letter-spacing:0;margin-top:.35rem}
+
+/* Belt: the one memorable element */
+.belt-wrap{background:rgba(255,255,255,.06);border-radius:14px;padding:1rem}
+.belt-label{font-size:.85rem;color:#B9BEF0;margin:0 0 .5rem}
+.belt-name{font-family:var(--display);font-weight:500;font-size:1rem;margin:0 0 .75rem}
+.belt{position:relative;height:22px;border-radius:4px;background:var(--belt,#fff);transition:background .5s ease;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.belt::after{content:"";position:absolute;right:18%;top:-6px;width:22px;height:34px;background:inherit;border-radius:3px;transform:rotate(12deg);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.belt-steps{display:flex;gap:4px;margin-top:.9rem}
+.belt-steps span{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.15)}
+.belt-steps span.on{background:var(--teal)}
+
+.nav{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.nav button{all:unset;cursor:pointer;display:grid;grid-template-columns:1.75rem 1fr auto;align-items:center;gap:.5rem;width:100%;box-sizing:border-box;padding:.6rem .7rem;border-radius:10px;font-size:.98rem;color:#DADDFB}
+.nav button:hover{background:rgba(255,255,255,.07)}
+.nav button[aria-current="page"]{background:#fff;color:var(--navy);font-weight:600}
+.nav .n{font-family:var(--display);font-size:.8rem;opacity:.8}
+.nav .done{width:1.1rem;height:1.1rem;border-radius:50%;border:2px solid currentColor;opacity:.45}
+.nav .done.ok{background:var(--teal);border-color:var(--teal);opacity:1}
+.side-foot{margin-top:auto;font-size:.85rem;color:#B9BEF0}
+.side-foot button{all:unset;cursor:pointer;text-decoration:underline}
+
+.main{padding:3rem clamp(1.25rem,5vw,4rem) 5rem;max-width:62rem;width:100%}
+.topbar{display:none}
+.kicker{color:var(--muted);font-weight:600;margin:0 0 .5rem}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(1.9rem,4.4vw,3rem);line-height:1.08;letter-spacing:-.02em;margin:0 0 1.25rem;max-width:20ch}
+h2{font-family:var(--display);font-weight:500;font-size:1.35rem;line-height:1.25;margin:2.5rem 0 .9rem}
+h3{font-size:1.1rem;margin:0 0 .4rem}
+p{margin:0 0 1rem;max-width:66ch}
+.lead{font-size:1.2rem;color:var(--muted);max-width:56ch}
+
+.grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:1.25rem 1.35rem}
+.tile p{font-size:.98rem;margin:0;color:var(--muted)}
+.tile ul{margin:.25rem 0 0;padding-left:1.1rem;color:var(--muted);font-size:.98rem}
+.stat{font-family:var(--display);font-weight:700;font-size:2rem;color:var(--accent);line-height:1}
+.note{background:var(--soft);color:var(--soft-ink);border-radius:14px;padding:1rem 1.25rem;margin:1.5rem 0;max-width:66ch}
+.note strong{color:inherit}
+.talk{border-left:4px solid var(--pink);padding:.25rem 0 .25rem 1rem;margin:1.25rem 0;max-width:62ch}
+.talk p{margin:0;font-size:1.05rem}
+.talk span{display:block;color:var(--muted);font-size:.9rem;margin-top:.35rem}
+
+dl.gloss{display:grid;grid-template-columns:minmax(8rem,12rem) 1fr;gap:.6rem 1.25rem;margin:0}
+dl.gloss dt{font-weight:700}
+dl.gloss dd{margin:0;color:var(--muted)}
+
+/* Catalog */
+.tools{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.25rem}
+.search{flex:1 1 16rem;font:inherit;padding:.7rem 1rem;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.chip{all:unset;cursor:pointer;padding:.45rem .85rem;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:.92rem}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.area{margin:0 0 1.75rem}
+.area h3{font-family:var(--display);font-weight:500;font-size:1rem;margin:0 0 .6rem}
+.courses{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
+.courses li{display:flex;flex-wrap:wrap;gap:.35rem .75rem;align-items:baseline;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.7rem 1rem}
+.courses a{font-weight:600;text-decoration:none}
+.courses a:hover{text-decoration:underline}
+.type{font-size:.8rem;font-weight:700;padding:.15rem .55rem;border-radius:999px;background:var(--soft);color:var(--soft-ink);white-space:nowrap}
+.type.master{background:var(--navy);color:#fff}
+.type.esp{background:#FFE3EF;color:#8A0F45}
+.empty{color:var(--muted)}
+
+/* Illustrations */
+.ill{margin:0 0 2rem;background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.ill svg{display:block;width:100%;height:auto}
+.ill figcaption{padding:.75rem 1.25rem;font-size:.92rem;color:var(--muted);border-top:1px solid var(--line)}
+.ill.side-ill{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);align-items:center}
+.ill.side-ill figcaption{border-top:0;border-left:1px solid var(--line);font-size:1rem;padding:1.25rem 1.5rem}
+@media (max-width:640px){.ill.side-ill{grid-template-columns:1fr}.ill.side-ill figcaption{border-left:0;border-top:1px solid var(--line)}}
+.area-h{display:flex;align-items:center;gap:.6rem}
+.area-h svg{width:34px;height:34px;flex:none}
+.tile-ic{width:44px;height:44px;margin-bottom:.6rem;display:block}
+
+/* Quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:1.25rem 1.35rem;margin:0 0 1rem}
+.q legend{font-weight:700;padding:0;margin:0 0 .75rem;font-size:1.05rem}
+.q fieldset{border:0;margin:0;padding:0}
+.opt{display:flex;gap:.6rem;align-items:flex-start;padding:.55rem .7rem;border-radius:10px;cursor:pointer;border:1px solid transparent}
+.opt:hover{background:var(--bg)}
+.opt input{margin-top:.35rem;accent-color:var(--navy)}
+.opt.right{border-color:#1FA88F;background:rgba(48,217,196,.12)}
+.opt.wrong{border-color:var(--pink);background:rgba(255,79,154,.1)}
+.why{font-size:.95rem;color:var(--muted);margin:.6rem 0 0}
+
+.actions{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--line)}
+.btn{all:unset;cursor:pointer;padding:.8rem 1.3rem;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.result{font-weight:700}
+
+@media (max-width: 860px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;padding:1.25rem}
+  .side .nav,.side .side-foot{display:none}
+  .side.open .nav{display:flex}
+  .side.open .side-foot{display:block}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+  .menu-btn{all:unset;cursor:pointer;padding:.5rem .8rem;border:1px solid rgba(255,255,255,.35);border-radius:10px;font-size:.9rem}
+  .brand-wide{display:none}
+  .main{padding-top:2rem}
+  dl.gloss{grid-template-columns:1fr}
+  dl.gloss dd{margin-bottom:.6rem}
+}
+@media (prefers-reduced-motion: reduce){ .belt{transition:none} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="topbar">
+      <div class="brand">Dojo Tokio School</div>
+      <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="nav">Módulos</button>
+    </div>
+    <div class="brand brand-wide">Dojo Tokio School<small>Formación interna para asesores</small></div>
+    <div class="belt-wrap" aria-live="polite">
+      <p class="belt-label">Tu cinturón</p>
+      <p class="belt-name" id="beltName">Blanco</p>
+      <div class="belt" id="belt" role="img" aria-label="Cinturón actual"></div>
+      <div class="belt-steps" id="beltSteps"></div>
+    </div>
+    <ul class="nav" id="nav"></ul>
+    <div class="side-foot">Contenido basado en tokioschool.com (octubre 2026). <button id="reset">Reiniciar progreso</button></div>
+  </aside>
+
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+
+<script>
+const MODULES = [
+  {id:'marca', title:'La marca'},
+  {id:'metodo', title:'El método'},
+  {id:'catalogo', title:'Catálogo de formaciones'},
+  {id:'titulos', title:'Títulos y certificaciones'},
+  {id:'empleo', title:'Prácticas y empleo'},
+  {id:'argumentario', title:'Argumentario y promo'},
+  {id:'examen', title:'Examen final'}
+];
+const BELTS = [
+  ['Blanco','#FFFFFF'],['Amarillo','#F6D33C'],['Naranja','#F59A3B'],['Verde','#34B36B'],
+  ['Azul','#2F6BE0'],['Morado','#7B3FD1'],['Marrón','#7A4A2A'],['Negro','#111522']
+];
+const U = 'https://www.tokioschool.com';
+const CATALOG = [
+  {area:'Programación', items:[
+    ['Máster en Desarrollo de Aplicaciones Móviles (Android & iOS)','/formaciones/cursos-programacion/master-android-ios/'],
+    ['Curso de Desarrollo Web Full Stack con IA Online','/formaciones/cursos-programacion/desarrollo-web-full-stack-development/'],
+    ['Curso de Programación con Python','/formaciones/cursos-programacion/python/'],
+    ['Curso de Programación Web Front-End (HTML5, CSS3 y JavaScript)','/formaciones/cursos-programacion/front-end/'],
+    ['Curso de Programación de Aplicaciones Móviles con Android','/formaciones/cursos-programacion/android/'],
+    ['Curso de Programación de Aplicaciones Móviles Swift','/formaciones/cursos-programacion/swift/'],
+    ['Especialidad en Inteligencia Artificial','/formaciones/cursos-programacion/python-especializacion-inteligencia-artificial/'],
+    ['Especialidad en Machine Learning','/formaciones/cursos-programacion/python-especializacion-machine-learning/'],
+    ['Especialidad en Deep Learning','/formaciones/cursos-programacion/python-especializacion-deep-learning/'],
+    ['Especialidad en Internet de las Cosas (IoT)','/formaciones/cursos-programacion/internet-cosas-iot-gestion-dispositivos/']]},
+  {area:'Vibe Coding', items:[
+    ['Curso de Vibe Coding: IA + QA Testing','/formaciones/cursos-vibe-coding/ia-qa-testing/']]},
+  {area:'Seguridad informática', items:[
+    ['Curso de Ciberseguridad Ofensiva: Auditoría y Pentesting','/formaciones/cursos-seguridad-informatica/ciberseguridad/'],
+    ['Especialidad en Hacking Ético','/formaciones/cursos-seguridad-informatica/hacking-etico/']]},
+  {area:'Análisis de datos', items:[
+    ['Máster en Big Data','/formaciones/cursos-analisis-datos/master-big-data/'],
+    ['Curso de Data Analytics Online','/formaciones/cursos-analisis-datos/data-analytics/'],
+    ['Curso de Cloud Computing Online','/formaciones/cursos-analisis-datos/cloud-computing/'],
+    ['Curso de Big Data','/formaciones/cursos-analisis-datos/big-data/'],
+    ['Especialidad en Business Intelligence','/formaciones/cursos-analisis-datos/big-data-business-intelligence/'],
+    ['Especialidad en Apache Hadoop','/formaciones/cursos-analisis-datos/big-data-hadoop/']]},
+  {area:'Inteligencia Artificial', items:[
+    ['Máster en Inteligencia Artificial','/formaciones/cursos-ia/inteligencia-artificial/']]},
+  {area:'Consultoría SAP', items:[
+    ['Máster en Consultoría SAP HANA Finanzas y Controlling (FI & CO)','/formaciones/cursos-sap/master-finanzas-controlling-fi-tr-co-im/'],
+    ['Máster en Consultoría SAP HANA Logística (SD & MM)','/formaciones/cursos-sap/master-logistica-sd-mm/'],
+    ['Curso de Consultoría SAP HANA Financiera (FI)','/formaciones/cursos-sap/hana/'],
+    ['Curso de Consultoría SAP HANA Compras y Materiales (MM)','/formaciones/cursos-sap/hana-mm/'],
+    ['Curso de Consultoría SAP HANA Contabilidad de Gestión (CO)','/formaciones/cursos-sap/controlling/'],
+    ['Curso de Consultoría SAP HANA Ventas (SD)','/formaciones/cursos-sap/sd/'],
+    ['Curso de Consultoría SAP Recursos Humanos (HCM)','/formaciones/cursos-sap/rrhh/']]},
+  {area:'Videojuegos', items:[
+    ['Máster en Diseño y Programación con Unity','/formaciones/cursos-videojuegos/master-diseno-programacion-unity/'],
+    ['Máster en Diseño y Programación con Unreal','/formaciones/cursos-videojuegos/master-diseno-programacion-con-unreal/'],
+    ['Máster en Programación de Videojuegos y Realidad Virtual con Unity y Unreal','/formaciones/cursos-videojuegos/master-programacion-unity-unreal/'],
+    ['Curso de Diseño de Videojuegos','/formaciones/cursos-videojuegos/diseno/'],
+    ['Curso de Programación de Videojuegos y Realidad Virtual con Unity','/formaciones/cursos-videojuegos/programacion-unity/'],
+    ['Curso de Programación de Videojuegos con Unreal','/formaciones/cursos-videojuegos/programacion-unreal-engine/'],
+    ['Curso de Creación y Modelado de Personajes 3D para Videojuegos','/formaciones/creacion-modelado-personajes-3d-videojuegos/']]},
+  {area:'Marketing', items:[
+    ['Curso de Marketing Digital','/formaciones/cursos-marketing-digital/especializacion-marketing/']]},
+  {area:'Redes informáticas', items:[
+    ['Curso de DevOps: Software Development en la Industria IT','/formaciones/cursos-redes-informaticas/devops-software-development/'],
+    ['Curso de Redes CISCO CCNA V7','/formaciones/cursos-redes-informaticas/cisco/']]}
+];
+const QUIZ = [
+  {q:'¿Cuánto tiempo tiene como máximo un alumno para terminar su formación?', o:['6 meses','1 año','Hasta 2 años','Sin límite'], a:2, why:'Hasta 2 años: es un argumento clave frente a los bootcamps intensivos.'},
+  {q:'¿Cuáles son los dos pilares del método Tokio School?', o:['Teoría y exámenes','Práctica y acompañamiento','Presencialidad y horarios fijos','Vídeos y lecturas'], a:1, why:'Learning by doing más un equipo que acompaña al alumno.'},
+  {q:'¿Cuántas horas de prácticas en empresa pueden incluir las formaciones?', o:['Hasta 100','Hasta 200','Hasta 300','Hasta 500'], a:2, why:'Hasta 300 horas, a través de la red de empresas Tokio Net.'},
+  {q:'¿Con aproximadamente cuántas empresas tiene acuerdos Tokio Net?', o:['Más de 300','Más de 1.000','Más de 3.000','Más de 10.000'], a:2, why:'Más de 3.000 empresas tecnológicas.'},
+  {q:'Un interesado pregunta por la acreditación UDIMA de un máster. ¿Qué requisito debes mencionar?', o:['Ninguno, es automática','Tener titulación universitaria previa relacionada y pagar tasas','Vivir en Madrid','Haber hecho antes un curso'], a:1, why:'UDIMA exige titulación universitaria previa en un área relacionada, entregar documentación en un mes y pagar tasas.'},
+  {q:'¿Qué ofrece el aval del Instituto Nebrija en los cursos?', o:['Un título oficial universitario','Un aval de competencias profesionales, sin valor de título oficial','Una beca','Prácticas garantizadas'], a:1, why:'Es un aval (previo pago de tasas) que no conduce a título oficial. No lo vendas como título oficial.'},
+  {q:'¿Qué significa RVOE?', o:['Validez oficial de estudios en México','Una certificación de Cisco','Un programa de becas','El campus virtual'], a:0, why:'Reconocimiento de Validez Oficial de Estudios, de la SEP de México.'},
+  {q:'¿Cómo llama la escuela a sus profesores?', o:['Maestros','Senséis','Coaches','Mentores'], a:1, why:'Senséis: profesionales en activo del sector tecnológico.'},
+  {q:'¿Qué promoción destaca la web este mes?', o:['Descuento del 50 %','Especialización Dual en Emprendimiento e IA generativa gratis con la matrícula','Portátil de regalo','Segunda formación gratis'], a:1, why:'La Especialización Dual: Emprendimiento e IA generativa va incluida con la matrícula; próxima convocatoria octubre 2026.'},
+  {q:'¿Qué certificaciones se obtienen directamente según la web?', o:['CEH, Autodesk y Unity','Solo PCAP','AWS y Azure','Ninguna'], a:0, why:'CEH, Autodesk y Unity directamente; PCAP u OCP se preparan gratis.'}
+];
+
+
+const C={n:'#000A5E',t:'#30D9C4',p:'#FF4F9A',y:'#F6D33C',w:'#FFFFFF',s:'#E9ECF8'};
+const SVG={
+hero:`<svg viewBox="0 0 800 300" role="img" aria-label="Un samurái digital ante un torii con símbolos de código"><rect width="800" height="300" fill="${C.n}"/>
+<circle cx="610" cy="120" r="78" fill="${C.p}"/>
+<g fill="${C.w}" opacity=".12"><rect x="0" y="230" width="800" height="70"/></g>
+<g fill="${C.t}"><rect x="470" y="70" width="280" height="18" rx="4"/><rect x="455" y="58" width="310" height="12" rx="6"/><rect x="495" y="102" width="230" height="10" rx="3"/><rect x="510" y="88" width="16" height="150"/><rect x="694" y="88" width="16" height="150"/></g>
+<g font-family="Unbounded,Arial Black,sans-serif" font-weight="700" fill="${C.w}"><text x="48" y="120" font-size="44">&lt;/&gt;</text><text x="48" y="180" font-size="22" fill="${C.t}">#alwaysforward</text></g>
+<g font-family="monospace" font-size="14" fill="${C.w}" opacity=".55"><text x="48" y="222">print("hola, tokier")</text><text x="250" y="70">SELECT * FROM futuro;</text></g>
+<g transform="translate(330 120)"><circle cx="40" cy="22" r="20" fill="${C.w}"/><path d="M14 60 q26 -22 52 0 v70 h-52z" fill="${C.w}"/><rect x="10" y="72" width="60" height="9" fill="${C.p}"/><rect x="62" y="-10" width="5" height="120" fill="${C.y}" transform="rotate(28 64 50)"/><rect x="4" y="130" width="14" height="40" fill="${C.w}"/><rect x="62" y="130" width="14" height="40" fill="${C.w}"/></g></svg>`,
+pillars:`<svg viewBox="0 0 400 260" role="img" aria-label="Dos pilares sosteniendo un tejado: práctica y acompañamiento"><rect width="400" height="260" fill="${C.s}"/>
+<path d="M40 70 L200 20 L360 70z" fill="${C.n}"/><rect x="40" y="70" width="320" height="16" fill="${C.n}"/>
+<rect x="85" y="86" width="70" height="140" fill="${C.t}"/><rect x="245" y="86" width="70" height="140" fill="${C.p}"/>
+<rect x="30" y="226" width="340" height="16" fill="${C.n}"/>
+<g fill="${C.n}"><path d="M104 130 l16 -16 16 16 -16 16z" fill="${C.w}"/><circle cx="268" cy="125" r="9" fill="${C.w}"/><circle cx="292" cy="125" r="9" fill="${C.w}"/><path d="M256 160 q12 -18 24 0 M280 160 q12 -18 24 0" stroke="${C.w}" stroke-width="7" fill="none"/></g>
+<g font-family="Albert Sans,sans-serif" font-weight="700" font-size="13" fill="${C.n}" text-anchor="middle"><text x="120" y="210">Práctica</text><text x="280" y="210" fill="${C.w}">Equipo</text></g></svg>`,
+diploma:`<svg viewBox="0 0 400 260" role="img" aria-label="Diploma con sello y medalla"><rect width="400" height="260" fill="${C.s}"/>
+<rect x="60" y="40" width="250" height="180" rx="10" fill="${C.w}" stroke="${C.n}" stroke-width="4"/>
+<rect x="90" y="70" width="150" height="14" rx="7" fill="${C.n}"/><rect x="90" y="100" width="190" height="8" rx="4" fill="${C.line||'#C9CEE6'}"/><rect x="90" y="118" width="170" height="8" rx="4" fill="#C9CEE6"/><rect x="90" y="136" width="120" height="8" rx="4" fill="#C9CEE6"/>
+<path d="M300 160 l-18 70 22 -12 14 20 10 -72z" fill="${C.p}"/><path d="M318 160 l14 70 10 -20 22 10 -20 -64z" fill="${C.p}" opacity=".8"/>
+<circle cx="320" cy="150" r="38" fill="${C.t}"/><circle cx="320" cy="150" r="26" fill="none" stroke="${C.n}" stroke-width="4"/><path d="M308 150 l9 9 17 -19" stroke="${C.n}" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
+tatami:`<svg viewBox="0 0 400 260" role="img" aria-label="Alumno sobre un tatami con edificios de empresas al fondo"><rect width="400" height="260" fill="${C.n}"/>
+<g fill="${C.w}" opacity=".18"><rect x="30" y="60" width="50" height="130"/><rect x="90" y="30" width="60" height="160"/><rect x="260" y="50" width="56" height="140"/><rect x="326" y="80" width="44" height="110"/></g>
+<g fill="${C.t}" opacity=".7"><rect x="102" y="45" width="10" height="10"/><rect x="124" y="45" width="10" height="10"/><rect x="102" y="70" width="10" height="10"/><rect x="272" y="66" width="10" height="10"/><rect x="294" y="90" width="10" height="10"/></g>
+<path d="M60 190 h280 l30 50 h-340z" fill="#C9B97A"/><path d="M200 190 v50 M130 190 l-10 50 M270 190 l10 50" stroke="#8C7C45" stroke-width="3"/>
+<g transform="translate(176 100)"><circle cx="24" cy="14" r="14" fill="${C.w}"/><path d="M4 46 q20 -16 40 0 v44 h-40z" fill="${C.w}"/><rect x="2" y="56" width="44" height="7" fill="${C.p}"/><rect x="-18" y="38" width="22" height="8" rx="4" fill="${C.w}" transform="rotate(-35 -7 42)"/><rect x="44" y="38" width="22" height="8" rx="4" fill="${C.w}" transform="rotate(35 55 42)"/></g>
+<g font-family="Unbounded,Arial Black,sans-serif" font-weight="700" fill="${C.t}" font-size="20"><text x="30" y="34">300 h</text></g></svg>`,
+talk:`<svg viewBox="0 0 400 260" role="img" aria-label="Asesor con auriculares hablando con un interesado"><rect width="400" height="260" fill="${C.s}"/>
+<rect x="30" y="40" width="190" height="80" rx="18" fill="${C.n}"/><path d="M70 120 l-10 28 34 -28z" fill="${C.n}"/>
+<rect x="52" y="64" width="140" height="10" rx="5" fill="${C.t}"/><rect x="52" y="86" width="100" height="10" rx="5" fill="${C.w}" opacity=".6"/>
+<rect x="200" y="140" width="170" height="70" rx="18" fill="${C.p}"/><path d="M330 210 l14 26 -40 -26z" fill="${C.p}"/>
+<text x="285" y="186" text-anchor="middle" font-family="Unbounded,Arial Black,sans-serif" font-size="26" font-weight="700" fill="${C.w}">?</text>
+<g transform="translate(60 160)"><circle cx="30" cy="30" r="24" fill="${C.n}"/><path d="M4 30 a26 26 0 0 1 52 0" stroke="${C.t}" stroke-width="6" fill="none"/><rect x="0" y="26" width="10" height="18" rx="4" fill="${C.t}"/><rect x="50" y="26" width="10" height="18" rx="4" fill="${C.t}"/><path d="M56 44 q0 16 -16 16" stroke="${C.t}" stroke-width="4" fill="none"/></g></svg>`,
+ia:`<svg viewBox="0 0 400 260" role="img" aria-label="Chispa de inteligencia artificial sobre un cohete despegando"><rect width="400" height="260" fill="${C.n}"/>
+<g fill="${C.w}" opacity=".5"><circle cx="50" cy="40" r="2"/><circle cx="330" cy="60" r="2"/><circle cx="120" cy="200" r="2"/><circle cx="360" cy="190" r="2"/><circle cx="80" cy="120" r="1.5"/></g>
+<g transform="rotate(35 200 140)"><path d="M200 40 q34 40 30 120 h-60 q-4 -80 30 -120z" fill="${C.w}"/><circle cx="200" cy="100" r="14" fill="${C.t}"/><path d="M170 160 l-22 30 30 -10z M230 160 l22 30 -30 -10z" fill="${C.p}"/><path d="M182 160 h36 l-18 50z" fill="${C.y}"/></g>
+<path d="M320 70 l8 22 22 8 -22 8 -8 22 -8 -22 -22 -8 22 -8z" fill="${C.t}"/>
+<text x="300" y="230" font-family="Unbounded,Arial Black,sans-serif" font-weight="700" font-size="22" fill="${C.t}">IA</text></svg>`,
+exam:`<svg viewBox="0 0 400 200" role="img" aria-label="Cinturones de colores del blanco al negro"><rect width="400" height="200" fill="${C.s}"/>
+${['#FFFFFF','#F6D33C','#F59A3B','#34B36B','#2F6BE0','#7B3FD1','#7A4A2A','#111522'].map((c,i)=>`<rect x="40" y="${24+i*19}" width="${120+i*28}" height="13" rx="3" fill="${c}" stroke="${C.n}" stroke-opacity=".25"/>`).join('')}
+<circle cx="340" cy="140" r="34" fill="${C.p}"/><text x="340" y="150" text-anchor="middle" font-family="Unbounded,Arial Black,sans-serif" font-weight="700" font-size="26" fill="${C.w}">8/10</text></svg>`
+};
+const ICON={
+'Programación':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.n}"/><path d="M15 13 l-7 7 7 7 M25 13 l7 7 -7 7" stroke="${C.t}" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+'Vibe Coding':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.p}"/><path d="M20 8 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3z" fill="${C.w}"/></svg>`,
+'Seguridad informática':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.n}"/><path d="M20 8 l10 4 v8 q0 9 -10 13 q-10 -4 -10 -13 v-8z" fill="${C.t}"/><rect x="16" y="18" width="8" height="7" rx="1.5" fill="${C.n}"/></svg>`,
+'Análisis de datos':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.n}"/><rect x="9" y="22" width="5" height="10" fill="${C.t}"/><rect x="17.5" y="15" width="5" height="17" fill="${C.t}"/><rect x="26" y="9" width="5" height="23" fill="${C.p}"/></svg>`,
+'Inteligencia Artificial':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.n}"/><g stroke="${C.t}" stroke-width="2"><path d="M12 12 L20 20 L28 12 M12 28 L20 20 L28 28"/></g><g fill="${C.w}"><circle cx="12" cy="12" r="3"/><circle cx="28" cy="12" r="3"/><circle cx="12" cy="28" r="3"/><circle cx="28" cy="28" r="3"/></g><circle cx="20" cy="20" r="4" fill="${C.p}"/></svg>`,
+'Consultoría SAP':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.n}"/><rect x="9" y="11" width="22" height="18" rx="3" fill="${C.w}"/><path d="M13 23 l5 -5 4 3 5 -6" stroke="${C.p}" stroke-width="2.5" fill="none"/></svg>`,
+'Videojuegos':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.p}"/><rect x="7" y="14" width="26" height="14" rx="7" fill="${C.w}"/><path d="M14 18 v6 M11 21 h6" stroke="${C.n}" stroke-width="2.5"/><circle cx="26" cy="19" r="1.8" fill="${C.n}"/><circle cx="29" cy="23" r="1.8" fill="${C.n}"/></svg>`,
+'Marketing':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.n}"/><path d="M9 17 h6 l12 -7 v20 l-12 -7 h-6z" fill="${C.t}"/><rect x="12" y="23" width="4" height="7" fill="${C.w}"/></svg>`,
+'Redes informáticas':`<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="${C.n}"/><g stroke="${C.t}" stroke-width="2"><path d="M20 12 v8 M11 28 L20 20 L29 28"/></g><g fill="${C.w}"><rect x="16" y="7" width="8" height="7" rx="1.5"/><rect x="7" y="26" width="8" height="7" rx="1.5"/><rect x="25" y="26" width="8" height="7" rx="1.5"/></g></svg>`
+};
+function fig(key,cap,side){const f=el('figure',{class:'ill'+(side?' side-ill':'')});f.insertAdjacentHTML('afterbegin',SVG[key]);if(cap)f.append(el('figcaption',{},cap));return f;}
+function icon(name,cls){const s=document.createElement('span');s.innerHTML=ICON[name]||'';const v=s.firstChild;if(v&&cls)v.setAttribute('class',cls);if(v){v.setAttribute('aria-hidden','true');}return v||'';}
+
+const KEY='dojo-tokio-v1';
+let state={done:{}, quiz:null, current:'marca'};
+try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) state=Object.assign(state,s); }catch(e){}
+const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){} };
+
+const nav=document.getElementById('nav'), main=document.getElementById('main');
+function el(tag,attrs={},...kids){const n=document.createElement(tag);for(const[k,v] of Object.entries(attrs)){if(k==='class')n.className=v;else if(k==='html')n.innerHTML=v;else n.setAttribute(k,v);}kids.flat().forEach(k=>n.append(k?.nodeType?k:document.createTextNode(k??'')));return n;}
+
+function renderBelt(){
+  const n=MODULES.filter(m=>state.done[m.id]).length;
+  const [name,color]=BELTS[n];
+  document.getElementById('beltName').textContent=name+(n===MODULES.length?' · Sensei comercial':'');
+  const b=document.getElementById('belt'); b.style.setProperty('--belt',color); b.setAttribute('aria-label','Cinturón '+name.toLowerCase()+', '+n+' de '+MODULES.length+' módulos completados');
+  const steps=document.getElementById('beltSteps'); steps.replaceChildren(...MODULES.map((m,i)=>el('span',{class:i<n?'on':''})));
+}
+function renderNav(){
+  nav.replaceChildren(...MODULES.map((m,i)=>{
+    const b=el('button',{type:'button'},el('span',{class:'n'},String(i+1).padStart(2,'0')),el('span',{},m.title),el('span',{class:'done'+(state.done[m.id]?' ok':''),'aria-label':state.done[m.id]?'completado':'pendiente'}));
+    if(m.id===state.current)b.setAttribute('aria-current','page');
+    b.addEventListener('click',()=>go(m.id));
+    return el('li',{},b);
+  }));
+}
+function go(id){state.current=id;save();renderNav();renderPage();document.getElementById('side').classList.remove('open');document.getElementById('menuBtn').setAttribute('aria-expanded','false');main.focus({preventScroll:true});window.scrollTo({top:0});}
+
+function footer(id){
+  const idx=MODULES.findIndex(m=>m.id===id); const next=MODULES[idx+1];
+  const wrap=el('div',{class:'actions'});
+  if(id!=='examen'){
+    const done=!!state.done[id];
+    const b=el('button',{class:'btn',type:'button'},done?'Completado ✓':'Marcar como completado');
+    b.addEventListener('click',()=>{state.done[id]=true;save();renderBelt();renderNav();if(next)go(next.id);else renderPage();});
+    wrap.append(b);
+  }
+  if(next){const g=el('button',{class:'btn ghost',type:'button'},'Ir a '+next.title.toLowerCase());g.addEventListener('click',()=>go(next.id));wrap.append(g);}
+  return wrap;
+}
+
+const PAGES={
+ marca:()=>[
+  el('p',{class:'kicker'},'Módulo 1 de 7'),
+  el('h1',{},'Tokio School, la escuela de los digital drivers'),
+  fig('hero','Formación tecnológica 100 % online con identidad propia: código, Japón y #alwaysforward.'),
+  el('p',{class:'lead'},'Tokio School es la escuela online de formación tecnológica del Grupo Northius. Forma a personas que quieren trabajar en tecnología y mantenerse siempre al día: su lema es #alwaysforward.'),
+  el('div',{class:'grid'},
+    el('div',{class:'tile'},el('div',{class:'stat'},'+35'),el('p',{},'Másteres, cursos TIC y especialidades en el catálogo.')),
+    el('div',{class:'tile'},el('div',{class:'stat'},'+10k'),el('p',{},'Alumnos (tokiers) que han confiado en la escuela.')),
+    el('div',{class:'tile'},el('div',{class:'stat'},'+80 %'),el('p',{},'De los tokiers recomiendan la escuela.')),
+    el('div',{class:'tile'},el('div',{class:'stat'},'100 %'),el('p',{},'Online, desde donde y cuando quiera el alumno.'))),
+  el('h2',{},'El universo Tokio: cómo hablar como la marca'),
+  el('p',{},'La marca usa un lenguaje inspirado en Japón y las artes marciales. Úsalo con naturalidad en tus llamadas: genera cercanía y hace que el alumno se sienta parte de algo.'),
+  el('dl',{class:'gloss'},
+    el('dt',{},'Tokiers'),el('dd',{},'Los alumnos y antiguos alumnos. Forman una comunidad con su propia web para compartir proyectos.'),
+    el('dt',{},'Senséis'),el('dd',{},'Los profesores: profesionales en activo en el sector tecnológico.'),
+    el('dt',{},'Samuráis digitales'),el('dd',{},'El perfil al que se dirige la escuela: gente que quiere estar siempre actualizada.'),
+    el('dt',{},'Subir al tatami'),el('dd',{},'Hacer las prácticas en empresa y demostrar lo aprendido.'),
+    el('dt',{},'Tokio Net'),el('dd',{},'La red de empresas colaboradoras donde se hacen las prácticas.'),
+    el('dt',{},'Sukiru'),el('dd',{},'Formación complementaria en habilidades para samuráis digitales.'),
+    el('dt',{},'La Red, La Crew, Los Works'),el('dd',{},'Los espacios de la comunidad Tokiers: networking, equipo y proyectos de alumnos.')),
+  el('h2',{},'Reconocimientos que puedes citar'),
+  el('p',{},'La escuela ha recibido premios como mejor centro especializado en IA, en nuevas tecnologías, en programación, en e-learning y en formación online para la inserción laboral, además del Student Choice. Cuenta con certificaciones AENOR, es empresa B Corp y colabora con ONCE Talento Digital.'),
+  el('div',{class:'note'},el('strong',{},'Consejo: '),'cuando el interesado dude de una escuela online, los premios, el sello B Corp y las opiniones de Trustpilot son tus primeras pruebas de confianza.')
+ ],
+ metodo:()=>[
+  el('p',{class:'kicker'},'Módulo 2 de 7'),
+  el('h1',{},'El método: aprender haciendo, nunca solo'),
+  el('p',{class:'lead'},'El método Tokio School se apoya en dos pilares: la práctica (learning by doing) y el acompañamiento constante de un equipo que resuelve dudas, marca objetivos y mantiene la motivación.'),
+  fig('pillars','Si un alumno recuerda una sola cosa del método, que sean estos dos pilares: aprende haciendo y nunca está solo.',true),
+  el('div',{class:'grid'},
+    el('div',{class:'tile'},el('h3',{},'Flexible'),el('ul',{},el('li',{},'100 % online.'),el('li',{},'Sin horarios fijos.'),el('li',{},'Hasta 2 años para terminar, sin la presión de un bootcamp intensivo.'))),
+    el('div',{class:'tile'},el('h3',{},'Senséis digitales'),el('ul',{},el('li',{},'Profesores en activo en el sector.'),el('li',{},'Aportan experiencia real de empresa.'))),
+    el('div',{class:'tile'},el('h3',{},'Learning by doing'),el('ul',{},el('li',{},'Ejercicios, casos prácticos y resolución de problemas.'),el('li',{},'Proyecto final.'),el('li',{},'Preparación de las certificaciones más pedidas.'))),
+    el('div',{class:'tile'},el('h3',{},'Las clases'),el('ul',{},el('li',{},'Clases en directo para teoría, casos y dudas.'),el('li',{},'Grabaciones siempre disponibles.'),el('li',{},'Masterclass de expertos y cursos complementarios gratis.'))),
+    el('div',{class:'tile'},el('h3',{},'Plataforma virtual'),el('ul',{},el('li',{},'Sencilla e intuitiva.'),el('li',{},'Contenidos, clases, vídeos, foros y entrega de prácticas en un solo lugar.'))),
+    el('div',{class:'tile'},el('h3',{},'Seguimiento personalizado'),el('ul',{},el('li',{},'Dudas resueltas por los propios profesores.'),el('li',{},'Tutores pedagógicos que siguen la evolución del alumno.')))),
+  el('h2',{},'Extras que suman valor'),
+  el('div',{class:'grid'},
+    el('div',{class:'tile'},el('h3',{},'Idiomas'),el('p',{},'Preparación para títulos oficiales de inglés Oxford o Cambridge hasta C1, y práctica de otros idiomas, japonés incluido.')),
+    el('div',{class:'tile'},el('h3',{},'Bienvenida'),el('p',{},'Vídeos de técnicas de estudio y memorización para empezar con buen pie.')),
+    el('div',{class:'tile'},el('h3',{},'Formación complementaria'),el('p',{},'Clases de puesta a punto en algunos programas y certificación Scrum Master gracias al acuerdo con Scrum Manager.')),
+    el('div',{class:'tile'},el('h3',{},'Software y licencias'),el('p',{},'Acuerdos con AWS, GitHub, IBM o Autodesk para incluir sus herramientas en la formación.'))),
+  el('div',{class:'talk'},el('p',{},'«Vas a aprender haciendo proyectos reales, con profesores que trabajan en el sector y un tutor que te sigue de cerca. Y tienes hasta dos años, así que puedes compaginarlo con tu trabajo.»'),el('span',{},'Cómo resumir el método en una llamada'))
+ ],
+ catalogo:()=>{
+  const wrap=el('div');
+  const head=[el('p',{class:'kicker'},'Módulo 3 de 7'),el('h1',{},'Catálogo de formaciones'),
+    el('p',{class:'lead'},'Nueve áreas tecnológicas. Usa el buscador durante una llamada para encontrar rápido la formación que encaja con el interesado.')];
+  const search=el('input',{class:'search',type:'search',placeholder:'Busca por nombre: Python, SAP, Unity…','aria-label':'Buscar formación'});
+  const types=[['todos','Todas'],['master','Másteres'],['curso','Cursos'],['esp','Especialidades']];
+  let ftype='todos';
+  const chips=types.map(([k,l])=>{const c=el('button',{class:'chip',type:'button','aria-pressed':k===ftype?'true':'false'},l);c.addEventListener('click',()=>{ftype=k;chips.forEach(x=>x.setAttribute('aria-pressed','false'));c.setAttribute('aria-pressed','true');draw();});return c;});
+  const list=el('div',{'aria-live':'polite'});
+  const kind=n=>n.startsWith('Máster')?'master':n.startsWith('Especialidad')?'esp':'curso';
+  const label={master:'Máster',esp:'Especialidad',curso:'Curso'};
+  function draw(){
+    const q=search.value.trim().toLowerCase(); let count=0;
+    const blocks=CATALOG.map(g=>{
+      const items=g.items.filter(([n])=>(ftype==='todos'||kind(n)===ftype)&&(!q||n.toLowerCase().includes(q)||g.area.toLowerCase().includes(q)));
+      count+=items.length; if(!items.length)return null;
+      return el('section',{class:'area'},el('h3',{class:'area-h'},icon(g.area),g.area),el('ul',{class:'courses'},items.map(([n,p])=>{const k=kind(n);return el('li',{},el('a',{href:U+p,target:'_blank',rel:'noopener'},n),el('span',{class:'type '+k},label[k]));})));
+    }).filter(Boolean);
+    list.replaceChildren(...(blocks.length?blocks:[el('p',{class:'empty'},'Ninguna formación coincide con la búsqueda. Prueba con otra palabra o elige “Todas”.')]));
+  }
+  search.addEventListener('input',draw); draw();
+  wrap.append(...head,el('div',{class:'tools'},search,...chips),list,
+    el('div',{class:'note'},el('strong',{},'Para recordar: '),'algunas formaciones aparecen en dos áreas (por ejemplo, IoT en Programación y en Seguridad, o DevOps en Programación y Redes). Es la misma formación. Y el área de Vibe Coding está pensada para gente que empieza de cero, sin haber programado nunca.'));
+  return [wrap];
+ },
+ titulos:()=>[
+  el('p',{class:'kicker'},'Módulo 4 de 7'),
+  el('h1',{},'Qué títulos y certificaciones obtiene el alumno'),
+  el('p',{class:'lead'},'Es una de las preguntas más frecuentes y donde más cuidado hay que tener: cada acreditación tiene condiciones distintas.'),
+  fig('diploma','Título propio siempre; acreditaciones oficiales y certificaciones según la formación y las condiciones de cada una.',true),
+  el('div',{class:'grid'},
+    el('div',{class:'tile'},el('h3',{},'Título propio Tokio School'),el('p',{},'Lo obtiene todo alumno que completa su formación.')),
+    el('div',{class:'tile'},el('h3',{},'UDIMA (algunos másteres)'),el('p',{},'Acreditación oficial a través de la Universidad a Distancia de Madrid. Requiere titulación universitaria previa en un área relacionada, entregar la documentación en el primer mes y pagar tasas.')),
+    el('div',{class:'tile'},el('h3',{},'Instituto Nebrija (cursos)'),el('p',{},'Aval de competencias profesionales, previo pago de tasas. No es un título con valor oficial.')),
+    el('div',{class:'tile'},el('h3',{},'RVOE (México)'),el('p',{},'Reconocimiento de Validez Oficial de Estudios de la SEP: las formaciones con este sello tienen validez oficial en el sistema educativo mexicano.'))),
+  el('h2',{},'Certificaciones tecnológicas'),
+  el('p',{},'Algunas se obtienen directamente con la formación y otras se preparan de forma gratuita:'),
+  el('div',{class:'grid'},
+    el('div',{class:'tile'},el('h3',{},'Se obtienen directamente'),el('ul',{},el('li',{},'CEH (hacking ético)'),el('li',{},'Autodesk'),el('li',{},'Unity Certified User'))),
+    el('div',{class:'tile'},el('h3',{},'Se preparan'),el('ul',{},el('li',{},'PCAP (Python Institute)'),el('li',{},'OCP (Java · Oracle)'),el('li',{},'Azure AI y Azure Data'),el('li',{},'GitHub Copilot'),el('li',{},'ISTQB (testing)'),el('li',{},'Cursos preparatorios de Cisco e IBM')))),
+  el('div',{class:'note'},el('strong',{},'Nunca prometas un título oficial '),'sin confirmar que la formación concreta tiene UDIMA o RVOE y que el alumno cumple los requisitos. Si tienes dudas, dilo y consúltalo: una promesa incorrecta acaba en baja o reclamación.')
+ ],
+ empleo:()=>[
+  el('p',{class:'kicker'},'Módulo 5 de 7'),
+  el('h1',{},'Prácticas y empleo: subir al tatami'),
+  el('p',{class:'lead'},'Para la mayoría de interesados, la empleabilidad es el motivo real de compra. Este módulo te da los datos para responder.'),
+  fig('tatami','Subir al tatami: hasta 300 horas de prácticas en empresas reales de la red Tokio Net.'),
+  el('div',{class:'grid'},
+    el('div',{class:'tile'},el('div',{class:'stat'},'300 h'),el('p',{},'Hasta 300 horas de prácticas incluidas en las formaciones.')),
+    el('div',{class:'tile'},el('div',{class:'stat'},'+3.000'),el('p',{},'Empresas tecnológicas con acuerdo en la red Tokio Net.')),
+    el('div',{class:'tile'},el('div',{class:'stat'},'+1.500'),el('p',{},'Oportunidades en el Observatorio de Empleo.'))),
+  el('h2',{},'Observatorio de Empleo'),
+  el('p',{},'Desde el primer día, el alumno recibe alertas de empleo según los intereses que indique. Además, muchos tokiers se quedan trabajando en la empresa donde hicieron las prácticas.'),
+  el('h2',{},'Empresas que puedes mencionar'),
+  el('p',{},'Entre las empresas colaboradoras están Artefact, Bosonit, Cartagon, Faro, ImpactWare, NinjaGames, Overstand Intelligence, Process Control, Softtek, ViewNext, Grupo Eulen y Exceltic.'),
+  el('div',{class:'talk'},el('p',{},'«Además de aprender, haces prácticas en una empresa real del sector, y desde el primer día recibes ofertas de empleo de tu perfil.»'),el('span',{},'Cómo contarlo en una frase')),
+  el('div',{class:'note'},el('strong',{},'Cuidado: '),'habla de prácticas y oportunidades, nunca de empleo garantizado.')
+ ],
+ argumentario:()=>[
+  el('p',{class:'kicker'},'Módulo 6 de 7'),
+  el('h1',{},'Argumentario y promoción vigente'),
+  fig('talk','Tu papel: escuchar qué busca el interesado y responder con los argumentos de la marca.',true),
+  el('h2',{},'Promoción de octubre 2026'),
+  fig('ia','Especialización Dual en Emprendimiento e IA generativa: incluida con la matrícula.',true),
+  el('div',{class:'tile'},el('h3',{},'Especialización Dual: Emprendimiento e IA generativa'),el('p',{},'Gratis con la matrícula. Enseña a usar las herramientas de IA generativa y a aplicarlas para lanzar un proyecto propio. Próxima convocatoria: octubre 2026.'),el('p',{},el('a',{href:U+'/especializacion-dual-emprendimiento-ia-generativa/',target:'_blank',rel:'noopener'},'Ver la promoción en la web'))),
+  el('h2',{},'Respuestas a objeciones habituales'),
+  el('div',{class:'grid'},
+    el('div',{class:'tile'},el('h3',{},'«No tengo tiempo»'),el('p',{},'Es 100 % online, sin horarios, con clases grabadas y hasta 2 años para terminar.')),
+    el('div',{class:'tile'},el('h3',{},'«Nunca he programado»'),el('p',{},'Los cursos de Vibe Coding están pensados para empezar desde cero, y algunos programas incluyen clases de puesta a punto.')),
+    el('div',{class:'tile'},el('h3',{},'«¿Me servirá para trabajar?»'),el('p',{},'Hasta 300 horas de prácticas en más de 3.000 empresas, más el Observatorio de Empleo.')),
+    el('div',{class:'tile'},el('h3',{},'«No me fío de lo online»'),el('p',{},'Premios del sector, sello B Corp, certificaciones AENOR y más de 10.000 alumnos. Y las opiniones en Trustpilot.')),
+    el('div',{class:'tile'},el('h3',{},'«Me voy a quedar solo»'),el('p',{},'Clases en directo, profesores que resuelven dudas, tutor pedagógico y la comunidad Tokiers.')),
+    el('div',{class:'tile'},el('h3',{},'«¿Tiene validez?»'),el('p',{},'Título propio, y según la formación, acreditación UDIMA, aval Nebrija o RVOE. Revisa siempre las condiciones del módulo 4.'))),
+  el('h2',{},'Lo que dicen los tokiers'),
+  el('p',{},'Las opiniones publicadas repiten tres ideas que puedes usar: la flexibilidad para estudiar a su ritmo, un temario amplio y completo, y conocer a antiguos alumnos que encontraron trabajo gracias a la formación.')
+ ],
+ examen:()=>{
+  const out=[el('p',{class:'kicker'},'Módulo 7 de 7'),el('h1',{},'Examen final'),el('p',{class:'lead'},'Diez preguntas sobre todo lo anterior. Con 8 aciertos consigues el cinturón negro.'),fig('exam','')];
+  const form=el('form',{novalidate:''});
+  QUIZ.forEach((it,i)=>{
+    const fs=el('fieldset',{},el('legend',{},(i+1)+'. '+it.q));
+    it.o.forEach((o,j)=>{fs.append(el('label',{class:'opt'},el('input',{type:'radio',name:'q'+i,value:String(j)}),el('span',{},o)));});
+    fs.append(el('p',{class:'why',hidden:''},it.why));
+    form.append(el('div',{class:'q'},fs));
+  });
+  const res=el('span',{class:'result','aria-live':'polite'});
+  const btn=el('button',{class:'btn',type:'submit'},'Corregir examen');
+  const retry=el('button',{class:'btn ghost',type:'button',hidden:''},'Repetir examen');
+  form.append(el('div',{class:'actions'},btn,retry,res));
+  form.addEventListener('submit',e=>{
+    e.preventDefault(); let ok=0, blank=0;
+    QUIZ.forEach((it,i)=>{
+      const chosen=form.querySelector(`input[name=q${i}]:checked`);
+      const labels=form.querySelectorAll(`input[name=q${i}]`);
+      labels.forEach(inp=>{const l=inp.closest('.opt');l.classList.remove('right','wrong');if(Number(inp.value)===it.a)l.classList.add('right');else if(inp.checked)l.classList.add('wrong');});
+      labels[0].closest('fieldset').querySelector('.why').hidden=false;
+      if(!chosen)blank++; else if(Number(chosen.value)===it.a)ok++;
+    });
+    state.quiz=ok;
+    if(ok>=8){state.done.examen=true;res.textContent=`${ok}/10. Aprobado: ya tienes tu cinturón.`;}
+    else res.textContent=`${ok}/10${blank?` (${blank} sin responder)`:''}. Necesitas 8 aciertos; revisa las explicaciones y vuelve a intentarlo.`;
+    save();renderBelt();renderNav();retry.hidden=false;
+  });
+  retry.addEventListener('click',()=>renderPage());
+  out.push(form);
+  return out;
+ }
+};
+function renderPage(){
+  const id=state.current in PAGES?state.current:'marca';
+  main.replaceChildren(...PAGES[id](), id==='examen'?'':footer(id));
+}
+document.getElementById('menuBtn').addEventListener('click',e=>{const s=document.getElementById('side');const o=s.classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',String(o));});
+document.getElementById('reset').addEventListener('click',()=>{if(confirm('¿Borrar tu progreso y empezar de nuevo?')){state={done:{},quiz:null,current:'marca'};save();renderBelt();renderNav();renderPage();}});
+renderBelt();renderNav();renderPage();
+</script>
+</body>
+</html>
